@@ -1,20 +1,23 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/docopt/docopt-go"
-	"github.com/mgutz/ansi"
-	"github.com/samuel/go-zookeeper/zk"
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/docopt/docopt-go"
+	"github.com/mgutz/ansi"
+	"github.com/samuel/go-zookeeper/zk"
 )
 
 const (
 	version = "0.1"
 	usage   = `Usage:
-	zk-view [--host=HOST] [--port=PORT] [PATH]
+	zk-view [--host=HOST] [--port=PORT] [--meta] [PATH]
 	zk-view --version
 	zk-view --help
 
@@ -26,6 +29,7 @@ var (
 	zkHost      = "127.0.0.1"
 	zkPort      = 2181
 	zkPath      = "/"
+	zkMeta      = false
 	turnOnColor = true
 )
 
@@ -46,20 +50,30 @@ func walk(root string, leading string, conn *zk.Conn) {
 	childCount := len(children)
 	for index, node := range children {
 		isLast := index == childCount-1
+		fullpath := path.Join(root, node)
+		data, stat, _ := conn.Get(fullpath)
+		displayNode(node, data, stat, leading, isLast)
 		var extra string
-
 		if isLast {
 			extra = "    "
 		} else {
 			extra = "│   "
 		}
-
-		fullpath := path.Join(root, node)
-
-		data, stat, _ := conn.Get(fullpath)
-		displayNode(node, data, stat, leading, isLast)
 		walk(fullpath, leading+extra, conn)
 	}
+}
+
+func addGuideLine(multLine string, leading string) string {
+	var result string
+	lines := strings.Split(multLine, "\n")
+	for index, line := range lines {
+		if index != len(lines)-1 {
+			result += leading + line + "\n"
+		} else {
+			result += leading + line
+		}
+	}
+	return result
 }
 
 func displayNode(name string, data []byte, stat *zk.Stat, leading string, isLast bool) {
@@ -69,14 +83,47 @@ func displayNode(name string, data []byte, stat *zk.Stat, leading string, isLast
 	} else {
 		sep = "├── "
 	}
-	fmt.Printf("%s%s%s # %s\n", leading, sep, colorize(name, "blue"), string(data))
+
+	meta := map[string]interface{}{
+		"Version":        stat.Version,
+		"Cversion":       stat.Cversion,
+		"Ctime":          stat.Ctime,
+		"Mtime":          stat.Mtime,
+		"EphemeralOwner": stat.EphemeralOwner,
+		"DataLength":     stat.DataLength,
+		"NumChildren":    stat.NumChildren,
+	}
+
+	var extra1 string
+	if isLast {
+		extra1 = "  "
+	} else {
+		extra1 = "│   "
+	}
+
+	var extra2 string
+	if stat.NumChildren > 0 {
+		extra2 = "│"
+	} else {
+		extra2 = " "
+	}
+
+	var metaData string
+	if zkMeta {
+		formatedMeta, _ := json.MarshalIndent(meta, leading+extra1+extra2, "  ")
+		metaData = string(formatedMeta)
+	} else {
+		metaData = ""
+	}
+
+	fmt.Printf("%s%s%s # %s %s\n", leading, sep, colorize(name, "blue"), data, metaData)
 }
 
 func show(path string) {
 	servers := []string{zkHost + ":" + strconv.FormatInt(int64(zkPort), 10)}
 	conn, _, err := zk.Connect(servers, 10*time.Second)
 	if err != nil {
-		fmt.Printf("meet an error when connect to %s\n", servers)
+		fmt.Printf("meet an error when connect to %s\n ", servers)
 	}
 
 	walk(path, "", conn)
@@ -101,6 +148,8 @@ func main() {
 		port, _ := strconv.ParseInt(opt["--port"].(string), 10, 32)
 		zkPort = int(port)
 	}
+
+	zkMeta = opt["--meta"].(bool)
 
 	fmt.Println(zkPath)
 	show(zkPath)
