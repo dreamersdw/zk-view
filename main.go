@@ -17,7 +17,7 @@ import (
 const (
 	version = "0.1"
 	usage   = `Usage:
-	zk-view [--host=HOST] [--port=PORT] [--meta] [PATH]
+	zk-view [--host=HOST] [--port=PORT] [--level=LEVEL] [--meta] [PATH]
 	zk-view --version
 	zk-view --help
 
@@ -30,6 +30,7 @@ var (
 	zkPort      = 2181
 	zkPath      = "/"
 	zkMeta      = false
+	zkMaxLevel  = 1024
 	turnOnColor = true
 )
 
@@ -40,7 +41,12 @@ func colorize(s string, style string) string {
 	return s
 }
 
-func walk(root string, leading string, conn *zk.Conn) {
+func walk(root string, leading string, level int, conn *zk.Conn) {
+
+	if level > zkMaxLevel {
+		return
+	}
+
 	children, _, err := conn.Children(root)
 	if err != nil {
 		fmt.Printf("error, when get children of %s, %s\n", root, err)
@@ -59,7 +65,7 @@ func walk(root string, leading string, conn *zk.Conn) {
 		} else {
 			extra = "│   "
 		}
-		walk(fullpath, leading+extra, conn)
+		walk(fullpath, leading+extra, level+1, conn)
 	}
 }
 
@@ -121,12 +127,12 @@ func displayNode(name string, data []byte, stat *zk.Stat, leading string, isLast
 
 func show(path string) {
 	servers := []string{zkHost + ":" + strconv.FormatInt(int64(zkPort), 10)}
-	conn, _, err := zk.Connect(servers, 10*time.Second)
+	conn, _, err := zk.Connect(servers, 100*time.Second)
 	if err != nil {
 		fmt.Printf("meet an error when connect to %s\n ", servers)
 	}
 
-	walk(path, "", conn)
+	walk(path, "", 1, conn)
 }
 
 func main() {
@@ -147,6 +153,11 @@ func main() {
 	if opt["--port"] != nil {
 		port, _ := strconv.ParseInt(opt["--port"].(string), 10, 32)
 		zkPort = int(port)
+	}
+
+	if opt["--level"] != nil {
+		level, _ := strconv.ParseInt(opt["--level"].(string), 10, 32)
+		zkMaxLevel = int(level)
 	}
 
 	zkMeta = opt["--meta"].(bool)
