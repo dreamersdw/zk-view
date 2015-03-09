@@ -12,6 +12,7 @@ import (
 	"github.com/docopt/docopt-go"
 	"github.com/mgutz/ansi"
 	"github.com/samuel/go-zookeeper/zk"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 const (
@@ -161,6 +162,7 @@ func main() {
 	}
 
 	zkMeta = opt["--meta"].(bool)
+	turnOnColor = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 	fmt.Println(zkPath)
 	show(zkPath)
