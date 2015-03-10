@@ -23,7 +23,7 @@ const (
 	zk-view --help
 
 Example:
-	zk-view 'tasks:*' 'metrics:*' `
+	zk-view --host localhost /consumers`
 )
 
 var (
