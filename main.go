@@ -18,7 +18,7 @@ import (
 const (
 	version = "0.1"
 	usage   = `Usage:
-	zk-view [--host=HOST] [--port=PORT] [--level=LEVEL] [--meta] [PATH]
+	zk-view [--host=HOST] [--port=PORT] [--level=LEVEL] [--meta [--human]] [PATH]
 	zk-view --version
 	zk-view --help
 
@@ -32,6 +32,7 @@ var (
 	zkPath      = "/"
 	zkMeta      = false
 	zkMaxLevel  = 1024
+	zkHuman     = false
 	turnOnColor = true
 )
 
@@ -40,6 +41,13 @@ func colorize(s string, style string) string {
 		return ansi.Color(s, style)
 	}
 	return s
+}
+
+func formatTimestamp(timestamp int64) interface{} {
+	if zkHuman {
+		return time.Unix(timestamp/1000, 0).Format("2006-01-02 15:04:05")
+	}
+	return timestamp
 }
 
 func walk(root string, leading string, level int, conn *zk.Conn) {
@@ -94,8 +102,8 @@ func displayNode(name string, data []byte, stat *zk.Stat, leading string, isLast
 	meta := map[string]interface{}{
 		"Version":        stat.Version,
 		"Cversion":       stat.Cversion,
-		"Ctime":          stat.Ctime,
-		"Mtime":          stat.Mtime,
+		"Ctime":          formatTimestamp(stat.Ctime),
+		"Mtime":          formatTimestamp(stat.Mtime),
 		"EphemeralOwner": stat.EphemeralOwner,
 		"DataLength":     stat.DataLength,
 		"NumChildren":    stat.NumChildren,
@@ -162,6 +170,7 @@ func main() {
 	}
 
 	zkMeta = opt["--meta"].(bool)
+	zkHuman = opt["--human"].(bool)
 	turnOnColor = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 	fmt.Println(zkPath)
