@@ -16,5 +16,3 @@ zk-view --help
 Example:
 	zk-view --host localhost /
 ```
-
-
