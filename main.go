@@ -18,7 +18,7 @@ import (
 const (
 	version = "0.1"
 	usage   = `Usage:
-	zk-view [--host=HOST] [--port=PORT] [--level=LEVEL] [--meta [--human]] [PATH]
+	zk-view [--host=HOST] [--port=PORT] [--level=LEVEL] [--nodata] [--meta [--human]] [PATH]
 	zk-view --version
 	zk-view --help
 
@@ -33,6 +33,7 @@ var (
 	zkMeta      = false
 	zkMaxLevel  = 1024
 	zkHuman     = false
+	zkNodata    = false
 	turnOnColor = true
 )
 
@@ -133,7 +134,13 @@ func displayNode(name string, data []byte, stat *zk.Stat, leading string, isLast
 		metaData = ""
 	}
 
-	fmt.Printf("%s%s%s %q %s\n", leading, sep, colorize(name, nodeColor), data, metaData)
+	var maybeData string
+
+	if !zkNodata && len(data) != 0 {
+		maybeData = fmt.Sprintf("%q", data)
+	}
+
+	fmt.Printf("%s%s%s %s %s\n", leading, sep, colorize(name, nodeColor), maybeData, metaData)
 }
 
 func show(path string) {
@@ -151,6 +158,16 @@ func main() {
 	if err != nil {
 		fmt.Println("error when parse cmdline")
 		os.Exit(1)
+	}
+
+	if opt["--help"].(bool) {
+		fmt.Println(usage)
+		return
+	}
+
+	if opt["--version"].(bool) {
+		fmt.Println(version)
+		return
 	}
 
 	if opt["PATH"] != nil {
@@ -173,6 +190,8 @@ func main() {
 
 	zkMeta = opt["--meta"].(bool)
 	zkHuman = opt["--human"].(bool)
+	zkNodata = opt["--nodata"].(bool)
+
 	turnOnColor = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 	fmt.Println(zkPath)
