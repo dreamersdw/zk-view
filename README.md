@@ -19,4 +19,4 @@ Example:
 
 ## Screenshot
 
-![zk-view][https://raw.githubusercontent.com/dreamersdw/zk-view/master/screenshot/zk-view.png]
+![zk-view](https://raw.githubusercontent.com/dreamersdw/zk-view/master/screenshot/zk-view.png)
