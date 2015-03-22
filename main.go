@@ -116,11 +116,13 @@ func displayNode(name string, data []byte, stat *zk.Stat, leading string, isLast
 		extra1 = "│   "
 	}
 
-	var extra2 string
+	var extra2, nodeColor string
 	if stat.NumChildren > 0 {
 		extra2 = "│"
+		nodeColor = "blue"
 	} else {
 		extra2 = " "
+		nodeColor = "green"
 	}
 
 	var metaData string
@@ -131,7 +133,7 @@ func displayNode(name string, data []byte, stat *zk.Stat, leading string, isLast
 		metaData = ""
 	}
 
-	fmt.Printf("%s%s%s # %q %s\n", leading, sep, colorize(name, "blue"), data, metaData)
+	fmt.Printf("%s%s%s %q %s\n", leading, sep, colorize(name, nodeColor), data, metaData)
 }
 
 func show(path string) {
