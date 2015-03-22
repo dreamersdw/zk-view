@@ -131,7 +131,7 @@ func displayNode(name string, data []byte, stat *zk.Stat, leading string, isLast
 		metaData = ""
 	}
 
-	fmt.Printf("%s%s%s # %s %s\n", leading, sep, colorize(name, "blue"), data, metaData)
+	fmt.Printf("%s%s%s # %q %s\n", leading, sep, colorize(name, "blue"), data, metaData)
 }
 
 func show(path string) {
