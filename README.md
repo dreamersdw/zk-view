@@ -9,10 +9,14 @@ go install github.com/dreamersdw/zk-view
 ```
 # Usage
 ```
-zk-view [--host=HOST] [--port=PORT] [--level=LEVEL] [--meta] [PATH]
+zk-view [--host=HOST] [--port=PORT] [--level=LEVEL] [--nodata] [--meta [--human]] [PATH]
 zk-view --version
 zk-view --help
 
 Example:
-	zk-view --host localhost /
+	zk-view --host localhost /consumers`
 ```
+
+## Screenshot
+
+![zk-view][https://raw.githubusercontent.com/dreamersdw/zk-view/master/screenshot/zk-view.png]
